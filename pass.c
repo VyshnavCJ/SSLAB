@@ -145,7 +145,7 @@ int pass_one(int no_lines){
 					}else if (strcmp(codes[i].opcode,"END")==0){
 						program_size = LOCCTR - start_address;
 						printf("Program Size:%x \nProgram Ended\n",program_size);
-						return program_size;
+						break;
 					}else{
 						printf("Invalid Opcode\n");
 						exit(0);
@@ -160,9 +160,11 @@ int pass_one(int no_lines){
 			LOCCTR = temp;
 		}
 	}
-	fprintf(fptr1, "\t\t\t\t\tEND \t\t%x\n",start_address);
+	char str[1000];
+	sprintf(str, "%x", start_address);
+	strcpy(inter[no_lines-1].operand,str);
+	fprintf(fptr1, "\t\t\t\tEND \t\t%s\n",str);
 	strcpy(inter[no_lines-1].opcode,"END");
-	itoa(start_address,inter[no_lines-1].operand, 16);
 	fclose(fptr1);
 	fclose(fptr2);
 }
