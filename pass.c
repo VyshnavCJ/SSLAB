@@ -1,22 +1,29 @@
 #include<stdio.h>
 #include<string.h>
 #include<stdlib.h>
-typedef struct Op_tab{
+typedef struct {
 	char opcode[100];
 	char hex[100];	
-};
+}Op_tab;
 
-typedef struct Code_line{
+typedef struct {
 	char label[100];
 	char opcode[100];
 	char operand[100];	
-};
+}Code_line;
 
-struct Code_line codes[100];
-struct Op_tab opcodes[100];
+Code_line codes[100];
+Op_tab opcodes[100];
 
+typedef struct
+{
+	int address;
+	char label[100];
+	char opcode[100];
+	char operand[100]; 
+}Inter_tab;
 
-
+Inter_tab inter[100];
 
 void opcode_fetch(){
 	
@@ -33,8 +40,7 @@ void opcode_fetch(){
     	char temp1[100],temp2[100];
     	fscanf ( fptr, "%s %s", temp1, temp2);
     	
-        while ( fscanf ( fptr, "%s %s", opcodes[i].opcode, opcodes[i].hex)==2) {
-        	//printf("%s %s\n",opcodes[i].opcode,opcodes[i].hex);	
+        while ( fscanf ( fptr, "%s %s", opcodes[i].opcode, opcodes[i].hex)==2) {	
         	i++;
         }
 }
@@ -57,7 +63,6 @@ int fetch_program(){
 				i++;
 			}
 		}
-		printf("%s\t %s \t%s\n",codes[j].label,codes[j].opcode,codes[j].operand);
 		j++;
 	}
 	return j;
@@ -97,20 +102,24 @@ int search_optab(char *opcode){
 	return 0;
 }
 
-void pass_one(int no_lines){
+int pass_one(int no_lines){
 	fflush(stdin);
 	int start_address;
 	int i=0;
 	int LOCCTR=0x0;
 	int program_size=0x0;
-	FILE *fptr = fopen("inter.txt", "w");
+	FILE *fptr1 = fopen("inter.txt", "w");
 	FILE *fptr2 = fopen("symtab.txt","w");
 	for(i=0;i<no_lines;i++){
 		int temp=0x0;
 		if(strcmp(codes[i].opcode,"START")==0){
 			start_address = (int)strtol(codes[i].operand, NULL, 16);
 			LOCCTR = start_address;
-			fprintf(fptr, "  \t\t%s \t\t%s \t\t%s\n",codes[i].label, codes[i].opcode,codes[i].operand);
+			fprintf(fptr1, "  \t\t%s \t\t%s \t\t%s\n",codes[i].label, codes[i].opcode,codes[i].operand);
+			strcpy(inter[i].label,codes[i].label);
+			strcpy(inter[i].opcode,codes[i].opcode);
+			strcpy(inter[i].operand,codes[i].operand);
+
 		}else{
 			if(strlen(codes[i].label)!=0){
 				int flag = search_symtab(codes[i].label);
@@ -132,31 +141,125 @@ void pass_one(int no_lines){
 					}else if(strcmp(codes[i].opcode,"RESB")==0){
 						temp = LOCCTR + atoi(codes[i].operand);
 					}else if(strcmp(codes[i].opcode,"BYTE")==0){
-						temp = LOCCTR + strlen(codes[i].operand);
+						temp = LOCCTR + (0x0)*strlen(codes[i].operand);
 					}else if (strcmp(codes[i].opcode,"END")==0){
 						program_size = LOCCTR - start_address;
 						printf("Program Size:%x \nProgram Ended\n",program_size);
-						break;
+						return program_size;
 					}else{
 						printf("Invalid Opcode\n");
 						exit(0);
 					}
 				}
 			}
-			fprintf(fptr, "%x \t\t%s \t\t%s \t\t%s\n",LOCCTR,codes[i].label,codes[i].opcode,codes[i].operand);
+			fprintf(fptr1, "%x \t\t%s \t\t%s \t\t%s\n",LOCCTR,codes[i].label,codes[i].opcode,codes[i].operand);
+			inter[i].address = LOCCTR;
+			strcpy(inter[i].label,codes[i].label);
+			strcpy(inter[i].opcode,codes[i].opcode);
+			strcpy(inter[i].operand,codes[i].operand);
 			LOCCTR = temp;
 		}
 	}
-	fprintf(fptr, "\t\t\t\t\tEND \t\t%x\n",start_address);
-	fclose(fptr);
+	fprintf(fptr1, "\t\t\t\t\tEND \t\t%x\n",start_address);
+	strcpy(inter[no_lines-1].opcode,"END");
+	itoa(start_address,inter[no_lines-1].operand, 16);
+	fclose(fptr1);
 	fclose(fptr2);
 }
 
 
-int main(){
+void pass_two(int no_lines,int program_size){
+	FILE *fptr1 = fopen("list.txt", "w");
+	FILE *fptr2 = fopen("object.txt","w");
+
+	int i;
+	for(i=0;i<no_lines;i++){
+			int temp1=(0x1)*program_size,temp2;
+			if(strcmp(inter[i].opcode,"START")==0){
+				fprintf(fptr1, "  \t\t%s \t\t%s \t\t%s\n",inter[i].label, inter[i].opcode,inter[i].operand);
+				int n = 5-strlen(inter[i].label);
+				fprintf(fptr2,"H%s%*s%05x\n",inter[i].label,n,"",temp1);
+				fprintf(fptr2,"T%06xff",temp1);
+			}else{
+				char *s1,*s2;
+				if(strlen(inter[i].opcode)!=0){
+					int flag  = search_optab(inter[i].opcode);	
+					if(flag){
+						FILE *fptr = fopen("optab.txt", "r");
+						char temp1[100],temp2[1000];
 	
+						if (fptr == NULL) {
+        					printf("no such file.");
+        					return ;
+    					}
+
+						fscanf ( fptr, "%s %s", temp1, temp2);
+
+						while ( fscanf ( fptr, "%s %s", temp1, temp2)==2) {	
+							if(strcmp(temp1,inter[i].opcode)==0){
+								fprintf(fptr2,"%s",temp2);
+								strcpy(s1,temp1);
+							}
+						}
+					}else{
+						int address;
+						if(strcmp(inter[i].opcode,"WORD")==0){
+							address = (int)strtol(inter[i].operand, NULL, 16);
+							fprintf(fptr2,"%06x",address);
+							fscanf(fptr1,"%x\t%s\t%s\t%s\t%06x\n",inter[i].address,inter[i].label,inter[i].opcode,inter[i].operand,address);
+							continue;
+						}
+						else if(strcmp(codes[i].opcode,"RESW")==0){
+							fscanf(fptr1,"%x\t%s\t%s\t%s\t%06x\n",inter[i].address,inter[i].label,inter[i].opcode,inter[i].operand,address);
+							continue;
+						}else if(strcmp(codes[i].opcode,"RESB")==0){
+							fscanf(fptr1,"%x\t%s\t%s\t%s\t%06x\n",inter[i].address,inter[i].label,inter[i].opcode,inter[i].operand,address);
+							continue;
+						}else if(strcmp(codes[i].opcode,"BYTE")==0){
+							address = (int)strtol(inter[i].operand, NULL, 16);
+							fprintf(fptr2,"%06x",address);
+							fscanf(fptr1,"%x\t%s\t%s\t%s\t%06x\n",inter[i].address,inter[i].label,inter[i].opcode,inter[i].operand,address);
+							continue;
+						}else if (strcmp(codes[i].opcode,"END")==0){
+							fscanf(fptr1,"%x\t%s\t%s\t%s\t%06x\n",inter[i].address,inter[i].label,inter[i].opcode,inter[i].operand,address);
+							fprintf(fptr2,"\nE%05x\n",inter[0].operand);
+							continue;
+						}else{
+							printf("Invalid Opcode\n");
+							exit(0);
+						}
+					}
+				}
+				int flag = search_symtab(inter[i].operand);
+				if(flag){
+					FILE *fptr = fopen("symtab.txt", "r");
+					if (fptr == NULL) {
+							printf("no such file.");
+							return ;
+					}
+					char *temp1,*temp2;
+					while ( fscanf ( fptr, "%s %s", temp1, temp2)==2) {	
+						if(strcmp(temp1,inter[i].operand)==0){
+							fprintf(fptr2,"%s",temp2);
+							strcpy(s2,temp2);
+						}
+					}
+				}
+				char * s=s1;
+				strcat(s,s2);
+				fscanf(fptr1,"%x\t%s\t%s\t%s\t%s\n",inter[i].address,inter[i].label,inter[i].opcode,inter[i].operand,s);
+			}
+		}
+
+
+
+	fclose(fptr1);
+	fclose(fptr2);
+}
+
+int main(){
 	opcode_fetch();
 	int no_lines = fetch_program();
-	pass_one(no_lines);
-	
+	int program_size = pass_one(no_lines);
+	//pass_two(no_lines,program_size);
 }
