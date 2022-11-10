@@ -248,6 +248,7 @@ void pass_two(int no_lines,int program_size){
 						}else if (strcmp(inter[i].opcode,"END")==0){
 							int start = (int)strtol(inter[i].operand, NULL, 16);
 							fprintf(fptr2,"\nE%06x\n",start);
+							fprintf(fptr1,"\t\t");
 						}else if(strcmp(inter[i].opcode,"RESW")==0 || strcmp(inter[i].opcode,"RESB")==0){	
 						}else{
 							printf("Invalid Opcode\n");
