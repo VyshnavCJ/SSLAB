@@ -166,7 +166,7 @@ int pass_one(int no_lines){
 	char str[1000];
 	sprintf(str, "%x", start_address);
 	strcpy(inter[no_lines-1].operand,str);
-	fprintf(fptr1, "\t\t\t\tEND \t\t%s\n",str);
+	fprintf(fptr1, "\t\t\t\tEND \t%s\n",str);
 	strcpy(inter[no_lines-1].opcode,"END");
 	fclose(fptr1);
 	fclose(fptr2);
@@ -216,7 +216,22 @@ void pass_two(int no_lines,int program_size){
 								strcpy(s1,temp2);
 							}
 						}
-						fprintf(fptr1,"%s\t\t%s\t%s\t\t%s\t",inter[i].address,inter[i].label,inter[i].opcode,inter[i].operand);
+						flag = search_symtab(inter[i].operand);
+						if(flag){
+							FILE *fptr = fopen("symtab.txt", "r");
+							if (fptr == NULL) {
+									printf("no such file.");
+									return ;
+							}
+							char temp1[100],temp2[100];
+							while ( fscanf ( fptr, "%s %s", temp1, temp2)==2) {	
+								if(strcmp(temp1,inter[i].operand)==0){
+									fprintf(fptr2,"%s",temp2);
+									strcat(s1,temp2);
+								}
+							}
+						}
+						fprintf(fptr1,"%s\t\t%s\t%s\t\t%s\t%s\n",inter[i].address,inter[i].label,inter[i].opcode,inter[i].operand,s1);
 					}else{
 						int address = (int)strtol(inter[i].operand, NULL, 16);
 						if(strcmp(inter[i].opcode,"WORD")==0){
@@ -238,26 +253,10 @@ void pass_two(int no_lines,int program_size){
 							printf("Invalid Opcode\n");
 							exit(0);
 						}
-						fprintf(fptr1,"%s\t%s\t%s\t\t%s\t",inter[i].address,inter[i].label,inter[i].opcode,inter[i].operand);
+						fprintf(fptr1,"%s\t%s\t%s\t\t%s\t%s\n",inter[i].address,inter[i].label,inter[i].opcode,inter[i].operand,s2);
 					}
 				}
-				int flag = search_symtab(inter[i].operand);
-				if(flag){
-					FILE *fptr = fopen("symtab.txt", "r");
-					if (fptr == NULL) {
-							printf("no such file.");
-							return ;
-					}
-					char temp1[100],temp2[100];
-					while ( fscanf ( fptr, "%s %s", temp1, temp2)==2) {	
-						if(strcmp(temp1,inter[i].operand)==0){
-							fprintf(fptr2,"%s",temp2);
-							strcpy(s2,temp2);
-						}
-					}
-				}
-				strcat(s1,s2);
-				fprintf(fptr1,"\t%s\n",s1);
+				
 				limiter--;
 			}
 		}
