@@ -1,4 +1,4 @@
 Opcode Hexacode
-LDA 00
-MUL 20
-STA 0C
+LDA     00
+MUL     20
+STA     0C

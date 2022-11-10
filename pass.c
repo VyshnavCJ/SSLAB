@@ -17,7 +17,7 @@ Op_tab opcodes[100];
 
 typedef struct
 {
-	int address;
+	char address[100];
 	char label[100];
 	char opcode[100];
 	char operand[100]; 
@@ -74,7 +74,7 @@ int search_symtab(char *label){
         	printf("no such file.");
         	return 0;
     }
-	char *temp1,*temp2;
+	char temp1[100],temp2[100];
 	while ( fscanf ( fptr, "%s %s", temp1, temp2)==2) {	
 		if(strcmp(temp1,label)==0){
 			return 1;
@@ -115,7 +115,7 @@ int pass_one(int no_lines){
 		if(strcmp(codes[i].opcode,"START")==0){
 			start_address = (int)strtol(codes[i].operand, NULL, 16);
 			LOCCTR = start_address;
-			fprintf(fptr1, "  \t\t%s \t\t%s \t\t%s\n",codes[i].label, codes[i].opcode,codes[i].operand);
+			fprintf(fptr1, "\t\t%s\t%s\t%s\t\n",codes[i].label, codes[i].opcode,codes[i].operand);
 			strcpy(inter[i].label,codes[i].label);
 			strcpy(inter[i].opcode,codes[i].opcode);
 			strcpy(inter[i].operand,codes[i].operand);
@@ -133,6 +133,7 @@ int pass_one(int no_lines){
 				int flag  = search_optab(codes[i].opcode);	
 				if(flag){
 					temp = LOCCTR + 0x3;
+					fprintf(fptr1, "%x\t\t%s\t%s\t\t%s\n",LOCCTR,codes[i].label,codes[i].opcode,codes[i].operand);
 				}else{
 					if(strcmp(codes[i].opcode,"WORD")==0)
 						temp=LOCCTR + 0x3;
@@ -150,10 +151,12 @@ int pass_one(int no_lines){
 						printf("Invalid Opcode\n");
 						exit(0);
 					}
+					fprintf(fptr1, "%x\t%s\t%s\t\t%s\n",LOCCTR,codes[i].label,codes[i].opcode,codes[i].operand);
 				}
 			}
-			fprintf(fptr1, "%x \t\t%s \t\t%s \t\t%s\n",LOCCTR,codes[i].label,codes[i].opcode,codes[i].operand);
-			inter[i].address = LOCCTR;
+			
+
+			sprintf(inter[i].address, "%x", LOCCTR);
 			strcpy(inter[i].label,codes[i].label);
 			strcpy(inter[i].opcode,codes[i].opcode);
 			strcpy(inter[i].operand,codes[i].operand);
@@ -167,6 +170,7 @@ int pass_one(int no_lines){
 	strcpy(inter[no_lines-1].opcode,"END");
 	fclose(fptr1);
 	fclose(fptr2);
+	return program_size;
 }
 
 
@@ -175,15 +179,24 @@ void pass_two(int no_lines,int program_size){
 	FILE *fptr2 = fopen("object.txt","w");
 
 	int i;
+	int limiter=3;
 	for(i=0;i<no_lines;i++){
 			int temp1=(0x1)*program_size,temp2;
+
+			if(limiter==0 && strcmp(inter[i].opcode,"END")!=0){
+				int start = (int)strtol(inter[i].address, NULL, 16);
+				fprintf(fptr2,"\nT%06x09",start);
+				limiter=3;
+			}
+			
 			if(strcmp(inter[i].opcode,"START")==0){
-				fprintf(fptr1, "  \t\t%s \t\t%s \t\t%s\n",inter[i].label, inter[i].opcode,inter[i].operand);
+				fprintf(fptr1,"%s\t\t%s\t%s\t%s\n",inter[i].address,inter[i].label,inter[i].opcode,inter[i].operand);
 				int n = 5-strlen(inter[i].label);
-				fprintf(fptr2,"H%s%*s%05x\n",inter[i].label,n,"",temp1);
-				fprintf(fptr2,"T%06xff",temp1);
+				int start = (int)strtol(inter[i].operand, NULL, 16);
+				fprintf(fptr2,"H%s%*s%06x%06x\n",inter[i].label,n,"",start,temp1);
+				fprintf(fptr2,"T%06x09",start);
 			}else{
-				char *s1,*s2;
+				char s1[100]="",s2[100]="";
 				if(strlen(inter[i].opcode)!=0){
 					int flag  = search_optab(inter[i].opcode);	
 					if(flag){
@@ -200,36 +213,32 @@ void pass_two(int no_lines,int program_size){
 						while ( fscanf ( fptr, "%s %s", temp1, temp2)==2) {	
 							if(strcmp(temp1,inter[i].opcode)==0){
 								fprintf(fptr2,"%s",temp2);
-								strcpy(s1,temp1);
+								strcpy(s1,temp2);
 							}
 						}
+						fprintf(fptr1,"%s\t\t%s\t%s\t\t%s\t",inter[i].address,inter[i].label,inter[i].opcode,inter[i].operand);
 					}else{
-						int address;
+						int address = (int)strtol(inter[i].operand, NULL, 16);
 						if(strcmp(inter[i].opcode,"WORD")==0){
+							fprintf(fptr2,"%06x",address);
+							char str[1000];
+							sprintf(str, "%06x",address);
+							strcpy(s2,str);
+						}else if(strcmp(inter[i].opcode,"BYTE")==0){
 							address = (int)strtol(inter[i].operand, NULL, 16);
 							fprintf(fptr2,"%06x",address);
-							fscanf(fptr1,"%x\t%s\t%s\t%s\t%06x\n",inter[i].address,inter[i].label,inter[i].opcode,inter[i].operand,address);
-							continue;
-						}
-						else if(strcmp(codes[i].opcode,"RESW")==0){
-							fscanf(fptr1,"%x\t%s\t%s\t%s\t%06x\n",inter[i].address,inter[i].label,inter[i].opcode,inter[i].operand,address);
-							continue;
-						}else if(strcmp(codes[i].opcode,"RESB")==0){
-							fscanf(fptr1,"%x\t%s\t%s\t%s\t%06x\n",inter[i].address,inter[i].label,inter[i].opcode,inter[i].operand,address);
-							continue;
-						}else if(strcmp(codes[i].opcode,"BYTE")==0){
-							address = (int)strtol(inter[i].operand, NULL, 16);
-							fprintf(fptr2,"%06x",address);
-							fscanf(fptr1,"%x\t%s\t%s\t%s\t%06x\n",inter[i].address,inter[i].label,inter[i].opcode,inter[i].operand,address);
-							continue;
-						}else if (strcmp(codes[i].opcode,"END")==0){
-							fscanf(fptr1,"%x\t%s\t%s\t%s\t%06x\n",inter[i].address,inter[i].label,inter[i].opcode,inter[i].operand,address);
-							fprintf(fptr2,"\nE%05x\n",inter[0].operand);
-							continue;
+							char str[1000];
+							sprintf(str, "%06x",address);
+							strcpy(s2,str);
+						}else if (strcmp(inter[i].opcode,"END")==0){
+							int start = (int)strtol(inter[i].operand, NULL, 16);
+							fprintf(fptr2,"\nE%06x\n",start);
+						}else if(strcmp(inter[i].opcode,"RESW")==0 || strcmp(inter[i].opcode,"RESB")==0){	
 						}else{
 							printf("Invalid Opcode\n");
 							exit(0);
 						}
+						fprintf(fptr1,"%s\t%s\t%s\t\t%s\t",inter[i].address,inter[i].label,inter[i].opcode,inter[i].operand);
 					}
 				}
 				int flag = search_symtab(inter[i].operand);
@@ -239,7 +248,7 @@ void pass_two(int no_lines,int program_size){
 							printf("no such file.");
 							return ;
 					}
-					char *temp1,*temp2;
+					char temp1[100],temp2[100];
 					while ( fscanf ( fptr, "%s %s", temp1, temp2)==2) {	
 						if(strcmp(temp1,inter[i].operand)==0){
 							fprintf(fptr2,"%s",temp2);
@@ -247,9 +256,9 @@ void pass_two(int no_lines,int program_size){
 						}
 					}
 				}
-				char * s=s1;
-				strcat(s,s2);
-				fscanf(fptr1,"%x\t%s\t%s\t%s\t%s\n",inter[i].address,inter[i].label,inter[i].opcode,inter[i].operand,s);
+				strcat(s1,s2);
+				fprintf(fptr1,"\t%s\n",s1);
+				limiter--;
 			}
 		}
 
@@ -263,5 +272,5 @@ int main(){
 	opcode_fetch();
 	int no_lines = fetch_program();
 	int program_size = pass_one(no_lines);
-	//pass_two(no_lines,program_size);
+	pass_two(no_lines,program_size);
 }
