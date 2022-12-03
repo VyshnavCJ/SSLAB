@@ -34,8 +34,7 @@ void opcode_fetch(){
         	return ;
     	}
     	int i=0;
-    	char temp[10000];
-    	int temp_hex=0;
+    	
     	
     	char temp1[100],temp2[100];
     	fscanf ( fptr, "%s %s", temp1, temp2);
@@ -142,7 +141,7 @@ int pass_one(int no_lines){
 					}else if(strcmp(codes[i].opcode,"RESB")==0){
 						temp = LOCCTR + atoi(codes[i].operand);
 					}else if(strcmp(codes[i].opcode,"BYTE")==0){
-						temp = LOCCTR + (0x0)*strlen(codes[i].operand);
+						temp = LOCCTR + (0x1)*strlen(codes[i].operand);
 					}else if (strcmp(codes[i].opcode,"END")==0){
 						program_size = LOCCTR - start_address;
 						printf("Program Size:%x \nProgram Ended\n",program_size);
