@@ -35,7 +35,6 @@ void opcode_fetch(){
     	}
     	int i=0;
     	
-    	
     	char temp1[100],temp2[100];
     	fscanf ( fptr, "%s %s", temp1, temp2);
     	
@@ -51,7 +50,8 @@ int fetch_program(){
 	char temp1[1000];
 	int j=0;
 	while ( fscanf ( fptr, "%s %s", temp1, codes[j].operand)==2) {	
-		for (int i = 0; i<strlen(temp1); i++) {
+		int i=0;
+		for (i = 0; i<strlen(temp1); i++) {
 			while(temp1[i] != ':') {
 				strncat(codes[j].label, &temp1[i], 1);
 				i++;
@@ -114,7 +114,7 @@ int pass_one(int no_lines){
 		if(strcmp(codes[i].opcode,"START")==0){
 			start_address = (int)strtol(codes[i].operand, NULL, 16);
 			LOCCTR = start_address;
-			fprintf(fptr1, "\t\t%s\t%s\t%s\t\n",codes[i].label, codes[i].opcode,codes[i].operand);
+			fprintf(fptr1, "\t%s\t%s\t%s\n",codes[i].label, codes[i].opcode,codes[i].operand);
 			strcpy(inter[i].label,codes[i].label);
 			strcpy(inter[i].opcode,codes[i].opcode);
 			strcpy(inter[i].operand,codes[i].operand);
@@ -132,7 +132,7 @@ int pass_one(int no_lines){
 				int flag  = search_optab(codes[i].opcode);	
 				if(flag){
 					temp = LOCCTR + 0x3;
-					fprintf(fptr1, "%x\t\t%s\t%s\t\t%s\n",LOCCTR,codes[i].label,codes[i].opcode,codes[i].operand);
+					fprintf(fptr1, "%x\t%s\t%s\t%s\n",LOCCTR,codes[i].label,codes[i].opcode,codes[i].operand);
 				}else{
 					if(strcmp(codes[i].opcode,"WORD")==0)
 						temp=LOCCTR + 0x3;
@@ -141,16 +141,15 @@ int pass_one(int no_lines){
 					}else if(strcmp(codes[i].opcode,"RESB")==0){
 						temp = LOCCTR + atoi(codes[i].operand);
 					}else if(strcmp(codes[i].opcode,"BYTE")==0){
-						temp = LOCCTR + (0x1)*strlen(codes[i].operand);
+						temp = LOCCTR + 0x1;
 					}else if (strcmp(codes[i].opcode,"END")==0){
 						program_size = LOCCTR - start_address;
-						printf("Program Size:%x \nProgram Ended\n",program_size);
 						break;
 					}else{
 						printf("Invalid Opcode\n");
 						exit(0);
 					}
-					fprintf(fptr1, "%x\t%s\t%s\t\t%s\n",LOCCTR,codes[i].label,codes[i].opcode,codes[i].operand);
+					fprintf(fptr1, "%x\t%s\t%s\t%s\n",LOCCTR,codes[i].label,codes[i].opcode,codes[i].operand);
 				}
 			}
 			
@@ -165,7 +164,7 @@ int pass_one(int no_lines){
 	char str[1000];
 	sprintf(str, "%x", start_address);
 	strcpy(inter[no_lines-1].operand,str);
-	fprintf(fptr1, "\t\t\t\tEND \t%s\n",str);
+	fprintf(fptr1, "\t\tEND \t%s\n",str);
 	strcpy(inter[no_lines-1].opcode,"END");
 	fclose(fptr1);
 	fclose(fptr2);
@@ -189,7 +188,7 @@ void pass_two(int no_lines,int program_size){
 			}
 			
 			if(strcmp(inter[i].opcode,"START")==0){
-				fprintf(fptr1,"%s\t\t%s\t%s\t%s\n",inter[i].address,inter[i].label,inter[i].opcode,inter[i].operand);
+				fprintf(fptr1,"%s\t%s\t%s\t%s\n",inter[i].address,inter[i].label,inter[i].opcode,inter[i].operand);
 				int n = 5-strlen(inter[i].label);
 				int start = (int)strtol(inter[i].operand, NULL, 16);
 				fprintf(fptr2,"H%s%*s%06x%06x\n",inter[i].label,n,"",start,temp1);
@@ -230,7 +229,7 @@ void pass_two(int no_lines,int program_size){
 								}
 							}
 						}
-						fprintf(fptr1,"%s\t\t%s\t%s\t\t%s\t%s\n",inter[i].address,inter[i].label,inter[i].opcode,inter[i].operand,s1);
+						fprintf(fptr1,"%s\t%s\t%s\t%s\t%s\n",inter[i].address,inter[i].label,inter[i].opcode,inter[i].operand,s1);
 					}else{
 						int address = (int)strtol(inter[i].operand, NULL, 16);
 						if(strcmp(inter[i].opcode,"WORD")==0){
@@ -247,13 +246,13 @@ void pass_two(int no_lines,int program_size){
 						}else if (strcmp(inter[i].opcode,"END")==0){
 							int start = (int)strtol(inter[i].operand, NULL, 16);
 							fprintf(fptr2,"\nE%06x\n",start);
-							fprintf(fptr1,"\t\t");
+							
 						}else if(strcmp(inter[i].opcode,"RESW")==0 || strcmp(inter[i].opcode,"RESB")==0){	
 						}else{
 							printf("Invalid Opcode\n");
 							exit(0);
 						}
-						fprintf(fptr1,"%s\t%s\t%s\t\t%s\t%s\n",inter[i].address,inter[i].label,inter[i].opcode,inter[i].operand,s2);
+						fprintf(fptr1,"%s\t%s\t%s\t%s\t%s\n",inter[i].address,inter[i].label,inter[i].opcode,inter[i].operand,s2);
 					}
 				}
 				
@@ -267,9 +266,86 @@ void pass_two(int no_lines,int program_size){
 	fclose(fptr2);
 }
 
+void display1() {
+
+    char str;
+    FILE *fp1, *fp2, *fp3;   
+	
+    printf("\n----------------Pass One-----------------\n\n");
+
+
+
+    // 1. Input Table
+    printf("\nThe contents of Input Table :\n\n");
+    fp1 = fopen("code.txt", "r");
+    str = fgetc(fp1);
+    while (str != EOF) {
+        printf("%c", str);
+        str = fgetc(fp1);
+    }
+    fclose(fp1);
+
+    //2. Output Table
+    printf("\n\nThe contents of Intermediate Table :\n\n");
+    fp2 = fopen("inter.txt", "r");
+    str = fgetc(fp2);
+    while (str != EOF) {
+        printf("%c", str);
+        str = fgetc(fp2);
+    }
+    fclose(fp2);
+
+    // 3. Symtable
+    printf("\n\nThe contents of Symbol Table :\n\n");
+    fp3 = fopen("symtab.txt", "r");
+    str = fgetc(fp3);
+    while (str != EOF) {
+        printf("%c", str);
+        str = fgetc(fp3);
+    }
+    fclose(fp3);
+	
+}
+
+
+void display2() {
+    char ch;
+    FILE *fp1,*fp2, *fp3, *fp4;
+
+    printf("\n-----------------------------Pass Two-------------------------------\n\nIntermediate file is converted into object code");
+
+
+    printf("\n\nThe contents of Assembly Listing file :\n\n");
+    fp1 = fopen("list.txt", "r");
+    ch = fgetc(fp1);
+    while (ch != EOF)
+    {
+        printf("%c", ch);
+        ch = fgetc(fp1);
+    }
+    fclose(fp1);
+
+    printf("\n\nThe contents of Object code file :\n\n");
+    fp4 = fopen("object.txt", "r");
+    ch = fgetc(fp4);
+    while (ch != EOF)
+    {
+        printf("%c", ch);
+        ch = fgetc(fp4);
+    }
+    
+    printf("\n");
+    fclose(fp4);
+
+}
+
+
 int main(){
 	opcode_fetch();
 	int no_lines = fetch_program();
 	int program_size = pass_one(no_lines);
 	pass_two(no_lines,program_size);
+	display1();
+	printf("\nThe length of the code : %d\n", program_size);
+	display2();
 }
