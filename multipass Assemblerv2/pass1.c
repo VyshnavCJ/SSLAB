@@ -80,7 +80,7 @@ void passOne(char label[10], char opcode[10], char operand[10], char code[10], c
         }
                 // BYTE -> add 1 to locctr 
         else if (strcmp(opcode, "BYTE") == 0) {
-            locctr=locctr+0x1;
+            locctr=locctr+0x1*((strlen(opcode))-3);
         }
                 // RESB -> add operand to locctr
         else if (strcmp(opcode, "RESB") == 0) {
