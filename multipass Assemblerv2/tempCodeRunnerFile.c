@@ -1,0 +1,1 @@
+fscanf(fp2, "%s\t%s", code, mnemonic);

@@ -8,14 +8,17 @@ int main()
 {
     char a[10], ad[10], label[10], opcode[10], operand[10], symbol[10];
     int start=0x0, diff=0x0, i=0x0, address=0x0, add=0x0, len=0x0, actual_len=0x0, finaddr=0x0, prevaddr=0x0, j = 0;
-    char mnemonic[15][15] = {"LDA", "STA", "LDCH", "STCH"};
-    char code[15][15] = {"33", "44", "53", "57"};
+    char code[10], mnemonic[3];
 
-    FILE *fp1, *fp2, *fp3, *fp4;
+    FILE *fp1, *fp2, *fp3, *fp4,*fp5,*fp6;
     fp1 = fopen("output.txt", "w");
     fp2 = fopen("symtab.txt", "r");
     fp3 = fopen("intermediate.txt", "r");
     fp4 = fopen("objcode.txt", "w");
+    fp6 = fopen("length.txt","r");
+    int length=0x0;
+    fscanf(fp6,"%x",&length);
+    
 
     fscanf(fp3, "%s\t%s\t%s", label, opcode, operand);
 
@@ -24,7 +27,6 @@ int main()
         prevaddr = address;
         fscanf(fp3, "%x%s%s%s", &address, label, opcode, operand);
     }
-    finaddr = address;
     
     fclose(fp3);
     fp3 = fopen("intermediate.txt", "r");
@@ -33,7 +35,7 @@ int main()
     if (strcmp(opcode, "START") == 0)
     {
         fprintf(fp1, "\t%s\t%s\t%s\n", label, opcode, operand);
-        fprintf(fp4, "H^%s^00%s^00%x\n", label, operand, finaddr);
+        fprintf(fp4, "H^%s^00%s^00%x\n", label, operand, length);
         fscanf(fp3, "%x%s%s%s", &address, label, opcode, operand);
         start = address;
         diff = prevaddr - start;
@@ -71,19 +73,21 @@ int main()
 
         else
         {
-            while (strcmp(opcode, mnemonic[j]) != 0)
-                j++;
-            if (strcmp(operand, "COPY") == 0)
-                fprintf(fp1, "%x\t%s\t%s\t%s\t%s0000\n", address, label, opcode, operand, code[j]);
-            else
-            {
-                rewind(fp2);
-                fscanf(fp2, "%s%x", symbol, &add);
-                while (strcmp(operand, symbol) != 0)
-                    fscanf(fp2, "%s%x", symbol, &add);
-                fprintf(fp1, "%x\t%s\t%s\t%s\t%s%x\n", address, label, opcode, operand, code[j], add);
-                fprintf(fp4, "^%s%x", code[j], add);
+           fp5 = fopen("optab.txt","r");
+           fscanf(fp5, "%s\t%s", code, mnemonic);
+           while (strcmp(code, "END") != 0) {
+                if (strcmp(opcode, code) == 0) {  
+                    break;
+                }
+                fscanf(fp5, "%s\t%s", code, mnemonic);
             }
+            rewind(fp2);
+            fscanf(fp2, "%s%x", symbol, &add);
+            while (strcmp(operand, symbol) != 0)
+                fscanf(fp2, "%s%x", symbol, &add);
+            fprintf(fp1, "%x\t%s\t%s\t%s\t%s%x\n", address, label, opcode, operand, mnemonic, add);
+            fprintf(fp4, "^%s%x", mnemonic, add);
+            fclose(fp5);
         }
 
         fscanf(fp3, "%x%s%s%s", &address, label, opcode, operand);
