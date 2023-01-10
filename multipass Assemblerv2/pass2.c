@@ -20,26 +20,26 @@ int main()
     fscanf(fp6,"%x",&length);
     
 
-    fscanf(fp3, "%s\t%s\t%s", label, opcode, operand);
+   // fscanf(fp3, "%s\t%s\t%s", label, opcode, operand);
 
-    while (strcmp(opcode, "END") != 0)
-    {
-        prevaddr = address;
-        fscanf(fp3, "%x%s%s%s", &address, label, opcode, operand);
-    }
+    // while (strcmp(opcode, "END") != 0)
+    // {
+    //     prevaddr = address;
+    //     fscanf(fp3, "%x%s%s%s", &address, label, opcode, operand);
+    // }
     
-    fclose(fp3);
-    fp3 = fopen("intermediate.txt", "r");
+    // fclose(fp3);
+    // fp3 = fopen("intermediate.txt", "r");
 
     fscanf(fp3, "\t%s\t%s\t%s", label, opcode, operand);
     if (strcmp(opcode, "START") == 0)
     {
         fprintf(fp1, "\t%s\t%s\t%s\n", label, opcode, operand);
-        fprintf(fp4, "H^%s^00%s^00%x\n", label, operand, length);
+        fprintf(fp4, "H^%s^00%s^0000%x\n", label, operand, length);
         fscanf(fp3, "%x%s%s%s", &address, label, opcode, operand);
         start = address;
-        diff = prevaddr - start;
-        fprintf(fp4, "T^00%x^%x", address, diff);
+        // diff = prevaddr - start;
+        fprintf(fp4, "T^00%x^%x", address, length);
     }
 
     while (strcmp(opcode, "END") != 0)
