@@ -1,1 +1,1 @@
-fscanf(fp2, "%s\t%s", code, mnemonic);
+void passOne(char label[10], char opcode[10], char operand[10], char code[10], char mnemonic[3]);

@@ -2,7 +2,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-void passOne(char label[10], char opcode[10], char operand[10], char code[10], char mnemonic[3]);
 void display();
 
 int main()
@@ -12,13 +11,6 @@ int main()
     // for reading from optab
     char code[10], mnemonic[3];
     // call the function
-    passOne(label, opcode, operand, code, mnemonic);
-
-    return 0;
-}
-
-void passOne(char label[10], char opcode[10], char operand[10], char code[10], char mnemonic[3]) 
-{
     int locctr=0x0, start=0x0, length=0x0;
 
     FILE *fp1, *fp2, *fp3, *fp4, *fp5;                                    // file pointers
@@ -107,7 +99,11 @@ void passOne(char label[10], char opcode[10], char operand[10], char code[10], c
     fprintf(fp5, "%x", length);
     fclose(fp5);
     printf("\nThe length of the code : %x\n", length);
+
+    return 0;
 }
+
+
 
 void display() {
 
