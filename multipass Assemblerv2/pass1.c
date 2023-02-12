@@ -48,6 +48,7 @@ int main()
         }
 
         // 3. read from optab (code and mnemonic value)
+        rewind(fp2);
         fscanf(fp2, "%s\t%s", code, mnemonic);
 
         // 4. traverse till the end of optab file
